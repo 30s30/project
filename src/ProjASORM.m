@@ -2,16 +2,14 @@
 %% Helmholtz Equation-AcH
 %% Bryan Soto Salinas|UH ID: 12781
 
-
 clc; 
 clear all; 
 
 % Set the variables 
 
-nx = 160; % nodes at the x axis; all dirichlet boundaries
+nx = 50; % nodes at the x axis; all dirichlet boundaries
 ny = nx; % nodes at y axis; bottom is neumann boundary so, ghost nodes 
-
-tol = 1e-9; %set the tolerance for gauss approx. 
+tol = 1e-6; %set the tolerance for gauss approx. 
 err = 1; % initialize error to check for tolerance every iteration 
 
 % Define parameters; 
@@ -25,9 +23,8 @@ dy = linspace(ay,by,ny)';
 
 % since same x-y grid length and assume equal spacing dx and # of nodes. 
 
-h = L/(nx+1);
-hx=h; 
-hy=h;
+h = Lx/(nx+1);  
+
 
 [x2,y2] = meshgrid(dx,dy); % create 2 x
 
@@ -61,18 +58,18 @@ u(1,nx) = u(2,nx)+u(1,nx-1); %upper right
 
 % create f matrix of inner values and add value for lambda depending on the
 
-%%  Gauss-Seidel Method
+%%  SOR Method
 t = input('Type number of case you want to solve: #1) [F=F(x,y);lambda=pi] OR  #2) [F=0;lambda=0] OR  #3) [F=F(x,y);lambda=0] \n#  '); 
 
 if t ==1   
-        f = cos((pi/2)*(2*((x2-ax)/(bx-ax))+1)).*sin(pi*(y2-ay)/(by-ay));
-        lambda=pi;
+       f = cos((pi/2)*(2*((x2-ax)/(bx-ax))+1)).*sin(pi*(y2-ay)/(by-ay));
+       lambda=pi;
 elseif t == 2
        f = zeros(ny,nx);
        lambda=0;
 elseif t == 3
-        f = cos((pi/2)*(2*((x2-ax)/(bx-ax))+1)).*sin(pi*(y2-ay)/(by-ay));
-        lambda=0;   
+       f = cos((pi/2)*(2*((x2-ax)/(bx-ax))+1)).*sin(pi*(y2-ay)/(by-ay));
+       lambda=0;   
 end
           
 %The while loop that evaluates the only Neumann BC, the discretization and also deals with the corners 
@@ -80,24 +77,27 @@ end
 c=1; itr = 0; % initialize iteration count
 dudy=0; % Neumann condition boundary value
 tic   %initialize timer
+
+ w = 2/(1+sin(pi*h)); %set optimal value for omega
+
 while  err > tol
-u_p = u;    % Define u_k+1 value as u_p to be the future value
+u_p = u;    % Define u_k value as u_p to be the initial value
     for j = 2:nx-1
         for i = 2:ny-1   % Indexing is applied for better performance 
             if c == 1
-            c= c +1 ;
+             c=c +1 ;  % only run if statement fr first itr
              u(1,1)=(u(1,2)+u(2,1))/2;              %Fix the corner values by taking average
              u(1,nx)= (u(1,nx-1)+u(2,nx))/2;
              u(ny,1)= (u(ny-1,1)+u(ny,2))/2;
              u(ny,nx)= (u(ny,nx-1)+u(ny-1,nx))/2;
-             
+           
             end;
             
-            u(i,j)=(1/(4-(lambda*hx^2)))*(u(i-1,j)+u_p(i+1,j)+u(i,j-1)+u_p(i,j+1)-f(i,j)*(hx^2)); %numerical algorithm for the inner nodes at k+1 using the outside nodes plus the source
+            u(i,j)= w*(1/(4-(lambda*h^2)))*(u(i-1,j)+u_p(i+1,j)+u(i,j-1)+u_p(i,j+1)-f(i,j)*(h^2))+((1-w)*u_p(i,j)); %numerical algorithm for the inner nodes at k+1 using the outside nodes plus the source
         end
         
         
-            u(ny,j) = (1/(4-(lambda*hx^2)))*(2*u(ny-1,j)+u(ny,j-1)+u(ny,j+1)-(hx^2)*f(ny,j)-2*hy*dudy); %Dicretized Neumann condition implemented to matrix
+            u(ny,j) = (1/(4-(lambda*h^2)))*(2*u(ny-1,j)+u(ny,j-1)+u(ny,j+1)-(h^2)*f(ny,j)-2*h*dudy); %Discretized Neumann condition implemented to matrix
         
     end
    
@@ -111,32 +111,19 @@ u_p = u;    % Define u_k+1 value as u_p to be the future value
    itr = itr+1;
    Eeval(:,itr) = [itr,err];
    
-end 
+end
 toc
-Eeval=Eeval'; 
+u_avg = mean(mean(u(2:nx-1,2:ny-1)))
+
+Eeval= Eeval'; 
 
 figure 
-plot(Eeval(:,1),Eeval(:,2))
+plot(Eeval(:,1),Eeval(:,2),'-r'), axis tight, xlabel(' # of iterations'),ylabel('Error'), title(['# iterations vs L2 Form error for a tolerance=',num2str(tol),', for N=',num2str(nx)])
 
 figure 
-surf(x2,y2,u)
+surf(x2,y2,u),title(['3D plot for SOR Method solution',',  tolerance=',num2str(tol),', for N=',num2str(nx)])
 
 figure 
-contour(u)
+contour(u),title(['Contour plot for SOR Method solution',',  tolerance=',num2str(tol),', for N=',num2str(nx)])
                 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
