@@ -4,12 +4,17 @@
 
 clc; 
 clear all; 
+close all; 
 
+if exist('checkpoint_SOR.mat','file')     %Opens a checkpoint if a file exists already
+    load('checkpoint_SOR.mat')
+end
+ 
 % Set the variables 
 
-nx = 50; % nodes at the x axis; all dirichlet boundaries
+nx = 5*2^1; % nodes at the x axis; all dirichlet boundaries
 ny = nx; % nodes at y axis; bottom is neumann boundary so, ghost nodes 
-tol = 1e-6; %set the tolerance for gauss approx. 
+tol = 1e-9; %set the tolerance for gauss approx. 
 err = 1; % initialize error to check for tolerance every iteration 
 
 % Define parameters; 
@@ -78,7 +83,7 @@ c=1; itr = 0; % initialize iteration count
 dudy=0; % Neumann condition boundary value
 tic   %initialize timer
 
- w = 2/(1+sin(pi*h)) %set optimal value for omega
+ w = 2/(1+sin(pi*h)); %set optimal value for omega
 
 while  err > tol
 u_p = u;    % Define u_k value as u_p to be the initial value
@@ -102,29 +107,36 @@ u_p = u;    % Define u_k value as u_p to be the initial value
     end
    
   
-   u(1,1)= (u(1,2)+u(2,1))/2;           %Fix corner values 
+   u(1,1)= (u(1,2)+u(2,1))/2;           %Fix corner values again
    u(1,nx)= (u(1,nx-1)+u(2,nx))/2;
    u(ny,1)= (u(ny-1,1)+u(ny,2))/2;
    u(ny,nx)= (u(ny,nx-1)+u(ny-1,nx))/2;
-   E = u - u_p;
+   E = u - u_p; % difference of previous and current value
    err = sqrt(sum(sum(E).^2)); %L_2 form error
-   itr = itr+1;
-   Eeval(:,itr) = [itr,err];
+   itr = itr+1;  % increases iterations by 1 
+   Eeval(:,itr) = [itr,err];  % creates a table of # of interations vs L2 error values
    
+if mod(itr,100)==0                               %Save checkpoint file 
+        save('checkpt_SOR_Manuf.mat');                   %Saving the file
+    end         
 end
+toc % ends timer 
 
 
+u_avg = mean(mean(u(2:nx-1,2:ny-1)))   % calculates mean values of u in inner nodes. 
+disp(['The number of time steps taken to converge using GS Method is: ',num2str(itr)]); % displys avg value of u values approximated
 
-toc
+
+%% Plotting figures for results 
 Eeval= Eeval'; 
 
 figure 
-plot(Eeval(:,1),Eeval(:,2),'-r'), axis tight, xlabel(' # of iterations'),ylabel('error'), title(['# iterations vs error for a tolerance=',num2str(tol),', for N=',num2str(nx)])
+plot(Eeval(:,1),Eeval(:,2),'-r'), axis tight, xlabel(' # of iterations'),ylabel('Error'), title(['# iterations vs L2 Form error for a tolerance=',num2str(tol),', for N=',num2str(nx)])
 
 figure 
-surf(x2,y2,u),title(['3D plot for SOR Method solution',
+surf(x2,y2,u),title(['3D plot for SOR Method solution',',  tolerance=',num2str(tol),', for N=',num2str(nx)])
 
 figure 
-contour(u)
+contour(u),title(['Contour plot for SOR Method solution',',  tolerance=',num2str(tol),', for N=',num2str(nx)])
                 
 

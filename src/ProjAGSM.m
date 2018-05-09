@@ -1,14 +1,17 @@
 %% Scientific Computing Final Project
-%% Helmholtz Equation-AcH
-%% Bryan Soto Salinas|UH ID: 12781
-
+%% Helmholtz Equation-AHc2-4
+%% Bryan Soto Salinas|UH ID: 1279821
 
 clc; 
 clear all; 
+close all;
 
+if exist('checkpoint_GS.mat','file')     %Opens a checkpoint if a file exists already
+    load('checkpoint_GS.mat')
+end
 % Set the variables 
 
-nx = 5*2^1; % nodes at the x axis; all dirichlet boundaries
+nx = 5*2^5; % nodes at the x axis; all dirichlet boundaries
 ny = nx; % nodes at y axis; bottom is neumann boundary so, ghost nodes 
 
 tol = 1e-9; %set the tolerance for gauss approx. 
@@ -29,7 +32,7 @@ h = Lx/(nx+1);
 hx=h; 
 hy=h;
 
-[x2,y2] = meshgrid(dx,dy); % create 2 x
+[x2,y2] = meshgrid(dx,dy); % create x and y grids according to their respective values in each direction
 
 y2 = flipud(y2); % flip the grid to make it look like my grid
 
@@ -111,10 +114,17 @@ u_p = u;    % Define u_k+1 value as u_p to be the future value
    itr = itr+1;
    Eeval(:,itr) = [itr,err];
    
+   if mod(itr,100)==0                               %Save checkpoint file 
+        save('checkpoint_GS.mat');                   %Saving the file
+    end         
 end 
-toc
+
+toc % ends timer 
 u_avg = mean(mean(u(2:nx-1,2:ny-1)))
 disp(['The number of time steps taken to converge using GS Method is: ',num2str(itr)]); 
+
+
+%% Plotting figures for results 
 Eeval= Eeval'; 
 
 figure 
@@ -124,11 +134,11 @@ figure
 surf(x2,y2,u),title(['3D plot for Gauss-Seidel Method solution',',  tolerance=',num2str(tol),', for N=',num2str(nx)])
 
 figure 
-contour(u),title(['Contour plot for SOR Method solution',',  tolerance=',num2str(tol),', for N=',num2str(nx)])
+contour(u),title(['Contour plot for Gauss Seidel Method solution',',  tolerance=',num2str(tol),', for N=',num2str(nx)])
 
+%% Delete the checkpoint file 
 
-
-
+delete('checkpoint_GS.mat');             %Delete the checkpoint file once the code has run completely
 
 
 

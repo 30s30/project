@@ -1,15 +1,20 @@
 %% Scientific Computing Final Project
-%% Helmholtz Equation-AcH
-%% Bryan Soto Salinas|UH ID: 12781
+%% Helmholtz Equation-AHc2-4
+%% Bryan Soto Salinas|UH ID: 1279821
 
 clc; 
 clear all; 
+close all; 
 
+if exist('checkpoint_SOR.mat','file')     %Opens a checkpoint if a file exists already
+    load('checkpoint_SOR.mat')
+end
+ 
 % Set the variables 
 
-nx = 50; % nodes at the x axis; all dirichlet boundaries
+nx = 5*2^5; % nodes at the x axis; all dirichlet boundaries
 ny = nx; % nodes at y axis; bottom is neumann boundary so, ghost nodes 
-tol = 1e-6; %set the tolerance for gauss approx. 
+tol = 1e-9; %set the tolerance for gauss approx. 
 err = 1; % initialize error to check for tolerance every iteration 
 
 % Define parameters; 
@@ -26,7 +31,7 @@ dy = linspace(ay,by,ny)';
 h = Lx/(nx+1);  
 
 
-[x2,y2] = meshgrid(dx,dy); % create 2 x
+[x2,y2] = meshgrid(dx,dy); % create x and y grids according to their respective values in each direction
 
 y2 = flipud(y2); % flip the grid to make it look like my grid
 
@@ -102,19 +107,27 @@ u_p = u;    % Define u_k value as u_p to be the initial value
     end
    
   
-   u(1,1)= (u(1,2)+u(2,1))/2;           %Fix corner values 
+   u(1,1)= (u(1,2)+u(2,1))/2;           %Fix corner values again
    u(1,nx)= (u(1,nx-1)+u(2,nx))/2;
    u(ny,1)= (u(ny-1,1)+u(ny,2))/2;
    u(ny,nx)= (u(ny,nx-1)+u(ny-1,nx))/2;
-   E = u - u_p;
+   E = u - u_p; % difference of previous and current value
    err = sqrt(sum(sum(E).^2)); %L_2 form error
-   itr = itr+1;
-   Eeval(:,itr) = [itr,err];
+   itr = itr+1;  % increases iterations by 1 
+   Eeval(:,itr) = [itr,err];  % creates a table of # of interations vs L2 error values
    
+if mod(itr,100)==0                               %Save checkpoint file 
+        save('checkpoint_SOR.mat');                   %Saving the file
+    end         
 end
-toc
-u_avg = mean(mean(u(2:nx-1,2:ny-1)))
+toc % ends timer 
 
+
+u_avg = mean(mean(u(2:nx-1,2:ny-1)))   % calculates mean values of u in inner nodes. 
+disp(['The number of time steps taken to converge using GS Method is: ',num2str(itr)]); % displys avg value of u values approximated
+
+
+%% Plotting figures for results 
 Eeval= Eeval'; 
 
 figure 
@@ -126,4 +139,6 @@ surf(x2,y2,u),title(['3D plot for SOR Method solution',',  tolerance=',num2str(t
 figure 
 contour(u),title(['Contour plot for SOR Method solution',',  tolerance=',num2str(tol),', for N=',num2str(nx)])
                 
+%% Delete the checkpoint file 
 
+delete('checkpoint_SOR.mat');             %Delete the checkpoint file once the code has run completely

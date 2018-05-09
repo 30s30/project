@@ -5,10 +5,10 @@
 
 clc; 
 clear all; 
-
+close all;
 % Set the variables 
 
-nx = 160; % nodes at the x axis; all dirichlet boundaries
+nx = 5*2^1; % nodes at the x axis; all dirichlet boundaries
 ny = nx; % nodes at y axis; bottom is neumann boundary so, ghost nodes 
 
 tol = 1e-9; %set the tolerance for gauss approx. 
@@ -17,15 +17,15 @@ err = 1; % initialize error to check for tolerance every iteration
 % Define parameters; 
 ax= -pi;ay= -pi;bx= pi;by= pi;
  
-Lx = 2*pi; % (-pi,pi) 
-Ly = 2*pi; % (-pi,pi) 
+Lx = bx-ax; % (-pi,pi) 
+Ly = by-ay; % (-pi,pi) 
 
 dx = linspace(ax,bx,nx);
 dy = linspace(ay,by,ny)'; 
 
 % since same x-y grid length and assume equal spacing dx and # of nodes. 
 
-h = L/(nx+1);
+h = Lx/(nx+1);
 hx=h; 
 hy=h;
 
@@ -113,22 +113,18 @@ u_p = u;    % Define u_k+1 value as u_p to be the future value
    
 end 
 toc
-Eeval=Eeval'; 
+u_avg = mean(mean(u(2:nx-1,2:ny-1)))
+disp(['The number of time steps taken to converge using GS Method is: ',num2str(itr)]); 
+Eeval= Eeval'; 
 
 figure 
-plot(Eeval(:,1),Eeval(:,2))
+plot(Eeval(:,1),Eeval(:,2),'-r'), axis tight, xlabel(' # of iterations'),ylabel('Error'), title(['# iterations vs L2 Form error for a tolerance=',num2str(tol),', for N=',num2str(nx)],', F=',num2str()
 
 figure 
-surf(x2,y2,u)
+surf(x2,y2,u),title(['3D plot for Gauss-Seidel Method solution',',  tolerance=',num2str(tol),', for N=',num2str(nx)])
 
 figure 
-contour(u)
-                
-
-
-
-
-
+contour(u),title(['Contour plot for SOR Method solution',',  tolerance=',num2str(tol),', for N=',num2str(nx)])
 
 
 
